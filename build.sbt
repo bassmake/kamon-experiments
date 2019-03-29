@@ -14,6 +14,7 @@ lazy val `kamon-experiments` = (project in file("."))
       akkaActor,
       kamonAkka,
       kamonPrometheus,
+      kamonZipkin,
       
       akkaTestkit % Test
     )

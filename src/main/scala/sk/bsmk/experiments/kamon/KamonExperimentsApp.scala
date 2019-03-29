@@ -10,6 +10,9 @@ import sk.bsmk.experiments.kamon.CustomerActor.{
 }
 import akka.pattern.ask
 import akka.util.Timeout
+import kamon.Kamon
+import kamon.prometheus.PrometheusReporter
+import kamon.zipkin.ZipkinReporter
 
 import scala.concurrent.{Await, Future}
 import scala.concurrent.duration._
@@ -21,6 +24,9 @@ object KamonExperimentsApp extends App with LazyLogging {
   implicit val timeout: Timeout = Timeout(duration)
 
   logger.info("Hello kamon")
+
+  Kamon.addReporter(new PrometheusReporter())
+  Kamon.addReporter(new ZipkinReporter())
 
   val system = ActorSystem("akka-with-kamon")
 

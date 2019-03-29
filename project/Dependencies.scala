@@ -8,6 +8,7 @@ object Dependencies {
     val akkaVersion = "2.5.21"
     val kamonVersion = "1.1.3"
     val kamonPrometheusVersion = "1.1.1"
+    val kamonZipkinVersion = "1.0.0"
   }
 
   val scalaLogging = "com.typesafe.scala-logging" %% "scala-logging" % Version.scalaLoggingVersion
@@ -19,5 +20,6 @@ object Dependencies {
   val kamon = "io.kamon" %% "kamon-core" % Version.kamonVersion
   val kamonAkka = "io.kamon" %% "kamon-akka-2.5" % Version.kamonVersion
   val kamonPrometheus = "io.kamon" %% "kamon-prometheus" % Version.kamonPrometheusVersion
+  val kamonZipkin = "io.kamon" %% "kamon-zipkin" % Version.kamonZipkinVersion
 
 }
