@@ -2,6 +2,8 @@ package sk.bsmk.experiments.kamon
 
 import akka.actor.{Actor, ActorRef, Props}
 import com.typesafe.scalalogging.LazyLogging
+import kamon.Kamon
+import org.slf4j.MDC
 import sk.bsmk.experiments.kamon.CustomerActor.{
   AddPoints,
   GetPointsInfo,
@@ -24,23 +26,44 @@ class CustomerActor(val name: String) extends Actor with LazyLogging {
 
   private val points: Int = 0
 
-  override def receive: Receive = onMessage(points)
+  override def receive: Receive =
+    onMessage(points)
 
   @SuppressWarnings(Array("org.wartremover.warts.Recursion"))
   private def onMessage(points: Int): Receive = {
     case AddPoints(pointsToAdd) =>
-      logger.info(s"$name - adding $pointsToAdd points")
-      context.become(onMessage(points + pointsToAdd))
+      withMdc {
+        logger.info(s"adding $pointsToAdd points")
+        context.become(onMessage(points + pointsToAdd))
+      }
     case ReducePoints(pointsToReduce) =>
-      logger.info(s"$name - reducing $pointsToReduce points")
-      context.become(onMessage(points - pointsToReduce))
+      withMdc {
+        logger.info(s"reducing $pointsToReduce points")
+        context.become(onMessage(points - pointsToReduce))
+      }
     case SendPointsTo(toWho, pointsToSend) =>
-      logger.info(s"$name - sending $pointsToSend points to ${toWho.path.name}")
-      toWho ! AddPoints(pointsToSend)
-      self ! ReducePoints(pointsToSend)
+      withMdc {
+        logger.info(s"sending $pointsToSend points to ${toWho.path.name}")
+        toWho ! AddPoints(pointsToSend)
+        self ! ReducePoints(pointsToSend)
+      }
     case GetPointsInfo =>
-      logger.info(s"$name - providing info about $points points")
-      sender() ! points
+      withMdc {
+        logger.info(s"providing info about $points points")
+        sender() ! points
+      }
+  }
+
+  private def withMdc(handler: => Unit): Unit = {
+    val kamonContext = Kamon.currentContext()
+    val correlationId = kamonContext.get(PropagatedContext.CorrelationIdKey)
+    MDC.put("CorrelationId", correlationId.toString)
+    MDC.put("Customer", name)
+    try {
+      handler
+    } finally {
+      MDC.clear()
+    }
   }
 
 }

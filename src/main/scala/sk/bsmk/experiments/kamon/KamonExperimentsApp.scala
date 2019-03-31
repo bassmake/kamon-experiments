@@ -1,22 +1,23 @@
 package sk.bsmk.experiments.kamon
 
 import akka.actor.ActorSystem
+import akka.pattern.ask
+import akka.util.Timeout
 import com.typesafe.scalalogging.LazyLogging
+import kamon.Kamon
+import kamon.context.Context
+import kamon.prometheus.PrometheusReporter
+import kamon.zipkin.ZipkinReporter
 import sk.bsmk.experiments.kamon.CustomerActor.{
   AddPoints,
   GetPointsInfo,
   ReducePoints,
   SendPointsTo
 }
-import akka.pattern.ask
-import akka.util.Timeout
-import kamon.Kamon
-import kamon.prometheus.PrometheusReporter
-import kamon.zipkin.ZipkinReporter
 
-import scala.concurrent.{Await, Future}
-import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration._
+import scala.concurrent.{Await, Future}
 
 object KamonExperimentsApp extends App with LazyLogging {
 
@@ -33,23 +34,38 @@ object KamonExperimentsApp extends App with LazyLogging {
   val alice = system.actorOf(CustomerActor.props("Alice"), "Alice-actor")
   val bob = system.actorOf(CustomerActor.props("Bob"), "Bob-actor")
 
-  for (i <- Range(1, 100)) {
-    logger.info(s"Start cycle $i")
-    alice ! AddPoints(3)
-    alice ! AddPoints(30)
-    alice ! ReducePoints(10)
-    alice ! SendPointsTo(bob, 3)
+  for (i <- Range(1, 10)) {
+    val correlationId = PropagatedContext.UuidGenerator.generate()
+    logger.info(s"Start cycle $i - $correlationId")
+
+    val context = Context()
+      .withKey(PropagatedContext.CorrelationIdKey, correlationId)
+
+    val scope = Kamon.storeContext(context)
+
+    scope.close()
+
+    Kamon.withContext(context) {
+      alice ! AddPoints(3)
+      alice ! AddPoints(30)
+      alice ! ReducePoints(10)
+      alice ! SendPointsTo(bob, 3)
+    }
     Thread.sleep((((i % 3) + 1) * 100).longValue())
   }
 
   val alicePointsFuture = (alice ? GetPointsInfo).mapTo[Int]
   val bobPointsFuture = (bob ? GetPointsInfo).mapTo[Int]
 
-  Future
+  val futures = Future
     .sequence(Seq(alicePointsFuture, bobPointsFuture))
-    .onComplete(_ => system.terminate())
 
   logger.info(s"Alice has ${Await.result(alicePointsFuture, duration)} points")
   logger.info(s"Bob has ${Await.result(bobPointsFuture, duration)} points")
+
+  futures.onComplete { _ =>
+    system.terminate()
+    Kamon.stopAllReporters()
+  }
 
 }

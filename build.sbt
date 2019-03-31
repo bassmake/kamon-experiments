@@ -11,6 +11,7 @@ lazy val `kamon-experiments` = (project in file("."))
     libraryDependencies ++= Seq(
       scalaLogging,
       logback,
+      uuidGenerator,
       akkaActor,
       kamonAkka,
       kamonPrometheus,
