@@ -5,7 +5,8 @@ import akka.pattern.ask
 import akka.util.Timeout
 import com.typesafe.scalalogging.LazyLogging
 import kamon.Kamon
-import kamon.context.Context
+import kamon.context.{Context, Key}
+import kamon.trace.{Span, Tracer}
 import sk.bsmk.experiments.kamon.CustomerActor.{
   AddPoints,
   GetPointsInfo,
@@ -33,12 +34,17 @@ object KamonExperimentsApp extends App with LazyLogging {
     val correlationId = PropagatedContext.UuidGenerator.generate()
     logger.info(s"Start cycle $i - $correlationId")
 
-    val context = Context()
+    val span = Kamon
+      .buildSpan("some operation")
+      .start()
+
+//    val span = Kamon.tracer
+//      .buildSpan("some operation")
+//      .start()
+
+    val context = Context
+      .create(Span.ContextKey, span)
       .withKey(PropagatedContext.CorrelationIdKey, correlationId)
-
-    val scope = Kamon.storeContext(context)
-
-    scope.close()
 
     Kamon.withContext(context) {
       alice ! AddPoints(3)
@@ -46,6 +52,7 @@ object KamonExperimentsApp extends App with LazyLogging {
       alice ! ReducePoints(10)
       alice ! SendPointsTo(bob, 3)
     }
+
     Thread.sleep((((i % 3) + 1) * 100).longValue())
   }
 

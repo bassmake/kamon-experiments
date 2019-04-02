@@ -1,19 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <configuration>
+  <conversionRule conversionWord="traceID" converterClass="kamon.logback.LogbackTraceIDConverter" />
 
-    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
-        <layout class="ch.qos.logback.classic.PatternLayout">
-            <Pattern>
-                %d{HH:mm:ss.SSS} %-5level %X %logger{36} - %msg%n
-            </Pattern>
-        </layout>
-    </appender>
+  <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder>
+      <pattern>%d{HH:mm:ss.SSS} %-5level | %traceID | %X | %logger{36} - %msg%n</pattern>
+    </encoder>
+  </appender>
 
-    <logger name="sk.bsmk" level="debug" additivity="false">
-        <appender-ref ref="CONSOLE"/>
-    </logger>
+  <appender name="ASYNC" class="ch.qos.logback.classic.AsyncAppender">
+    <appender-ref ref="CONSOLE" />
+  </appender>
 
-    <root level="error">
-        <appender-ref ref="CONSOLE"/>
-    </root>
+  <root level="error">
+    <appender-ref ref="ASYNC"/>
+  </root>
+
+  <logger name="sk.bsmk" level="debug" additivity="false">
+    <appender-ref ref="ASYNC"/>
+  </logger>
 
 </configuration>

@@ -57,9 +57,11 @@ class CustomerActor(val name: String) extends Actor with LazyLogging {
   private def withMdc(handler: => Unit): Unit = {
     val kamonContext = Kamon.currentContext()
     val correlationId = kamonContext.get(PropagatedContext.CorrelationIdKey)
-    MDC.put("CorrelationId", correlationId.toString)
+
+//    MDC.put("CorrelationId", correlationId.toString)
     MDC.put("Customer", name)
     try {
+      logger.info(s"Received correlationId: $correlationId")
       handler
     } finally {
       MDC.clear()
