@@ -2,7 +2,6 @@ package sk.bsmk.experiments.kamon
 
 import akka.actor.{Actor, ActorRef, Props}
 import com.typesafe.scalalogging.LazyLogging
-import kamon.Kamon
 import org.slf4j.MDC
 import sk.bsmk.experiments.kamon.CustomerActor.{
   AddPoints,
@@ -55,13 +54,8 @@ class CustomerActor(val name: String) extends Actor with LazyLogging {
   }
 
   private def withMdc(handler: => Unit): Unit = {
-    val kamonContext = Kamon.currentContext()
-    val correlationId = kamonContext.get(PropagatedContext.CorrelationIdKey)
-
-//    MDC.put("CorrelationId", correlationId.toString)
     MDC.put("Customer", name)
     try {
-      logger.info(s"Received correlationId: $correlationId")
       handler
     } finally {
       MDC.clear()
