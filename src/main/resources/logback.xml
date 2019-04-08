@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
-  <conversionRule conversionWord="traceID" converterClass="kamon.logback.LogbackTraceIDConverter" />
+
+  <conversionRule conversionWord="correlationId" converterClass="sk.bsmk.experiments.kamon.LogbackCorrelationIdConverter" />
 
   <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
     <encoder>
-      <pattern>%d{HH:mm:ss.SSS} %-5level | %traceID | %X | %logger{36} - %msg%n</pattern>
+      <pattern>%d{HH:mm:ss.SSS} %-5level | %correlationId | %logger{36} - %msg%n</pattern>
     </encoder>
   </appender>
 
